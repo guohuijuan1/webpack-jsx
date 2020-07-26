@@ -41,30 +41,80 @@ export class Carousel {
       }
 
       const onPan = e => {
+        console.log('onPan')
+        let dx = e.clientX - e.startX;
         let lastEle = children[lastPosition];
         let curEle = children[curPosition];
         let nextEle = children[nextPosition];
-        let curTranfromVal = -500 * curPosition + offset;
-        let nextTranfromVal = -500 -500 * nextPosition + offset;
-        let lastTranfromVal = 500 -500 * lastPosition + offset;
-        let dx = e.clientX - e.startX;
-        console.log('onPan', curTranfromVal, offset)
+        let curTranfromVal = -500 * curPosition + offset + dx;
+        let nextTranfromVal = 500 -500 * nextPosition + offset + dx;
+        let lastTranfromVal = -500 -500 * lastPosition + offset + dx;
 
-        lastEle.style.transform = `translateX(${lastTranfromVal + dx}px)`
-        curEle.style.transform = `translateX(${curTranfromVal + dx}px)`
-        nextEle.style.transform = `translateX(${nextTranfromVal + dx}px)`
+        lastEle.style.transform = `translateX(${lastTranfromVal}px)`
+        curEle.style.transform = `translateX(${curTranfromVal}px)`
+        nextEle.style.transform = `translateX(${nextTranfromVal}px)`
       }
 
       const onPanend = e => {
-        // nextPickStopHander = setTimeout(nextPic, 3000)
+        let direction = 0;
+        const dx = e.clientX - e.startX;
+        if (dx + offset > 250) {
+          direction = 1;
+        } else if (dx + offset < -250) {
+          direction = -1;
+        }
+
+        this.tl.reset();
+        this.tl.start();
+
+        let lastEle = children[lastPosition];
+        let curEle = children[curPosition];
+        let nextEle = children[nextPosition];
+
+        let lastAnimation = new Animation({
+          object: lastEle.style,
+          property: 'transform',
+          template: v => `translateX(${v}px)`,
+          start: -500 -500 * lastPosition + offset + dx,
+          end: -500 -500 * lastPosition + offset + dx + direction * 500,
+          duration: 500, 
+          delay: 0,
+          timingFunction: ease,
+        })
+        let curAnimation = new Animation({
+          object: curEle.style,
+          property: 'transform',
+          template: v => `translateX(${v}px)`,
+          start: -500 * curPosition + offset + dx,
+          end: -500 * curPosition + offset + dx + direction * 500,
+          duration: 500, 
+          delay: 0,
+          timingFunction: ease,
+        })
+        let nextAnimation = new Animation({
+          object: nextEle.style,
+          property: 'transform',
+          template: v => `translateX(${v}px)`,
+          start: 500 -500 * nextPosition + offset + dx,
+          end: 500 -500 * nextPosition + offset + dx + direction * 500,
+          duration: 500, 
+          delay: 0,
+          timingFunction: ease,
+        })
+        this.tl.add(lastAnimation);
+        this.tl.add(curAnimation);
+        this.tl.add(nextAnimation);
+
+        position = (position - direction + this.data.length) % this.data.length;
+        nextPickStopHander = setTimeout(nextPic, 3000)
         console.log('onPanend')
       }
 
-      const onEnd = () => {
-        // nextPickStopHander = setTimeout(nextPic, 3000)
+      const onCancel = () => {
+        nextPickStopHander = setTimeout(nextPic, 3000)
       }
 
-      let ele = <img src={url} onStart={onStart} onPan={onPan} onPanend={onPanend} onEnd={onEnd} enableGesture={true} />;
+      let ele = <img src={url} onStart={onStart} onPan={onPan} onPanend={onPanend} onCancel={onCancel} enableGesture={true} />;
       ele.addEventListener("dragstart", event => event.preventDefault());
       ele.style.transform = 'translateX(0px)'
       return ele;
@@ -81,7 +131,7 @@ export class Carousel {
         template: v => `translateX(${5 * v}px)`,
         start: -100 * position,
         end: -100 -100 * position,
-        duration: 5000, 
+        duration: 500, 
         delay: 0,
         timingFunction: ease,
       })
@@ -92,7 +142,7 @@ export class Carousel {
         template: v => `translateX(${5 * v}px)`,
         start: 100 -100 * nextPosition,
         end: -100 * nextPosition,
-        duration: 5000, 
+        duration: 500, 
         delay: 0,
         timingFunction: ease,
       })
